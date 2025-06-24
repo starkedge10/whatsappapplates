@@ -26,7 +26,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: ['http://localhost:5173', 'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'],
+    origin: [
+      'http://localhost:5173',
+      'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true
   }
@@ -35,13 +38,17 @@ const io = new SocketIOServer(server, {
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'],
+  origin: [
+    'http://localhost:5173',
+    'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  credentials: true,
+  credentials: true
 }));
 
 app.use(express.json());
 
+// Your routes
 app.use('/', webhookRoutes);
 app.use('/', templateRoutes);
 app.use('/', campaignRoutes);
@@ -51,27 +58,26 @@ app.use('/', keywordRoutes);
 app.use('/', chatbotsRoutes);
 app.use('/', chatRoutes);
 
-
+// Socket.io
 app.set('io', io);
 setupMessageSocket(io);
 
-// 🔥 Serve React build in production:
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+// 🚀 Always serve React build (for Heroku + local production builds)
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
-  });
-}
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+});
 
+// Start server
 const start = async () => {
   try {
     await connect(process.env.ATLAS_URI);
     server.listen(PORT, () => {
-      console.log(` Server running on http://localhost:${PORT}`);
+      console.log(`✅ Server running on http://localhost:${PORT}`);
     });
   } catch (err) {
-    console.error(' Failed to start server:', err.message);
+    console.error('❌ Failed to start server:', err.message);
   }
 };
 
