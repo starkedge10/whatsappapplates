@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>3D Shirt Logo Placement & Color Change</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .color-button {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+
+        .color-button.active {
+            border: 3px solid #000;
+        }
+
+        #viewer-container {
+            height: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <div>
+            <strong>Place Logo:</strong><br />
+            <button onclick="placeLogo('topLeft')">Top Left</button>
+            <button onclick="placeLogo('topRight')">Top Right</button>
+            <button onclick="placeLogo('centerFront')">Center Front</button>
+            <button onclick="placeLogo('bottomLeft')">Bottom Left</button>
+            <button onclick="placeLogo('bottomRight')">Bottom Right</button>
+            <button onclick="placeLogo('centerBack')">Back Center</button>
+        </div>
+        <br />
+        <div>
+            <strong>Shirt Color:</strong><br />
+            <button class="color-button active" style="background:rgb(90, 90, 90);"
+                onclick="changeShirtColor('rgb(70, 69, 69)', this)"></button>
+            <button class="color-button" style="background:white;" onclick="changeShirtColor('white', this)"></button>
+            <button class="color-button" style="background:red;" onclick="changeShirtColor('red', this)"></button>
+            <button class="color-button" style="background:blue;" onclick="changeShirtColor('blue', this)"></button>
+            <button class="color-button" style="background:green;" onclick="changeShirtColor('green', this)"></button>
+        </div>
+    </div>
+    <div id="viewer-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/geometries/DecalGeometry.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls, model;
+        let currentDecal = null;
+        const originalMaterials = new Map();
+
+        const decalMaterial = new THREE.MeshPhongMaterial({
+            specular: 0x444444,
+            map: new THREE.TextureLoader().load('https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png'),
+            transparent: true,
+            depthTest: true,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -10,
+            color: 0xffffff
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('viewer-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1, 6);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'https://cdn.shopify.com/3d/models/6d0552ad282ff8b2/blacktee_mock_1_.glb',
+                function (gltf) {
+                    model = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = new THREE.Vector3();
+                    box.getCenter(center);
+                    model.position.sub(center);
+                    scene.add(model);
+
+                    model.traverse((child) => {
+                        if (child.isMesh && child.material) {
+                            originalMaterials.set(child.uuid, child.material.clone());
+                        }
+                    });
+
+                    // Apply default shirt color from the first button, not 'original'
+                    const firstColorBtn = document.querySelector('.color-button.active');
+                    if (firstColorBtn) {
+                        changeShirtColor('rgb(70, 69, 69)', firstColorBtn);
+                    }
+
+                    controls.target.set(0, 0.8, 0);
+                    controls.update();
+                },
+                undefined,
+                function (error) {
+                    console.error('Failed to load model:', error);
+                }
+            );
+
+            window.addEventListener('resize', onWindowResize, false);
+            animate();
+        });
+
+        function placeLogo(position) {
+            if (!model) return;
+
+            // Get shirt mesh (assuming first mesh found)
+            const shirtMesh = model.getObjectByProperty('type', 'Mesh');
+            if (!shirtMesh) {
+                console.warn('No mesh found in the model.');
+                return;
+            }
+
+            if (currentDecal) {
+                scene.remove(currentDecal);
+                currentDecal.geometry.dispose();
+                currentDecal = null;
+            }
+
+            const size = new THREE.Vector3(0.3, 0.25, 0.3);
+            const orientation = new THREE.Euler(0, 0, 0);
+            let pos = new THREE.Vector3();
+            let normalDir = new THREE.Vector3(0, 0, 1);
+
+            if (position === 'topLeft') {
+                pos.set(-0.55, 0.9, 0.1);
+                rotateToFront();
+            } else if (position === 'topRight') {
+                pos.set(0.55, 1.05, 0.1);
+                rotateToFront();
+            } else if (position === 'centerFront') {
+                pos.set(0, 0.1, 0.1);
+                rotateToFront();
+            } else if (position === 'bottomLeft') {
+                pos.set(-0.45, -1.08, 0.25);
+                rotateToFront();
+            } else if (position === 'bottomRight') {
+                pos.set(0.45, -1.08, 0.25);
+                rotateToFront();
+            } else if (position === 'centerBack') {
+                pos.set(0, 0.8, -0.15);
+                normalDir.set(0, 0, -1);
+                rotateToBack();
+            }
+
+            pos.add(normalDir.clone().multiplyScalar(0.15));
+
+            const decalGeometry = new THREE.DecalGeometry(shirtMesh, pos, orientation, size);
+            currentDecal = new THREE.Mesh(decalGeometry, decalMaterial);
+            scene.add(currentDecal);
+        }
+
+        function rotateToBack() {
+            camera.position.set(0, 1, -6);
+        }
+
+        function rotateToFront() {
+            camera.position.set(0, 1, 6);
+        }
+
+        function changeShirtColor(color, buttonEl) {
+            if (!model) return;
+
+            model.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    if (color === 'original') {
+                        const original = originalMaterials.get(child.uuid);
+                        if (original) {
+                            child.material.copy(original);
+                            child.material.needsUpdate = true;
+                        }
+                    } else {
+                        child.material.map = null;
+                        child.material.color.set(color);
+                        child.material.needsUpdate = true;
+                    }
+                }
+            });
+
+            // Update button UI
+            document.querySelectorAll('.color-button').forEach(btn => btn.classList.remove('active'));
+            if (buttonEl) {
+                buttonEl.classList.add('active');
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>

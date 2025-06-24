@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+.side-bar-menu a {
+
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+
+body {
+  padding: 0px;
+  margin: 0px;
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+input,
+select,
+textarea {
+  font-weight: 600;
+}
+
+
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+
+::-webkit-scrollbar-track {
+  background: #ebebea;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #acacac;
+  border-radius: 10px;
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+
+
+
+.items:hover .fill {
+  fill: #00A67A;
+}
+
+.items:hover .stroke {
+  stroke: #00A67A;
+}
+
+.items .fill.active {
+  fill: #00A67A;
+
+}
+
+.items .stroke.active {
+  stroke: #00A67A;
+
+}
+
+.react-flow__pane {
+  pointer-events: fill !important;
+}
+
+.react-flow__panel.react-flow__minimap.bottom.right {
+  background-color: #fff;
+  box-shadow: rgba(0, 0, 0, 0.1) 10px 15px 25px !important;
+  border-radius: 5px !important;
+}
+
+
+
+
+.react-flow__panel.react-flow__controls {
+  box-shadow: rgba(0, 0, 0, 0.1) 10px 15px 25px !important;
+  display: flex;
+  border-radius: 5px !important;
+  margin: 0px 0px 35px 30px !important;
+
+}
+
+.react-flow__controls-button {
+  width: 46px !important;
+  height: 28px !important;
+  border: none !important;
+  background: rgb(255, 255, 255) !important;
+  display: flex;
+  padding: 0px;
+}
+
+.react-flow__controls-button svg {
+  width: auto !important;
+  max-width: 23px !important;
+  max-height: 23px !important;
+  margin: auto !;
+}
+
+
+input,
+textarea {
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+}
+
+
+
+
+.Toastify__toast.Toastify__toast--pending {
+  background-color: #ffe58f !important;
+  color: #000 !important;
+}
