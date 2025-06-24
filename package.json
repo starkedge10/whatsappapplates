@@ -2,24 +2,32 @@
   "name": "web-chat-clone",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "node whatsapp-webhook/server.js",
+    "dev": "cd whatsapp-webhook && nodemon server.js",
     "client": "cd client && npm run dev",
-    "heroku-postbuild": "cd client && npm install && npm run build"
+    "client:build": "cd client && npm install && npm run build",
+    "heroku-postbuild": "npm run client:build"
   },
   "engines": {
-    "node": "20.x"
+    "node": "20.x",
+    "npm": ">=8.0.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "nodemon": "^3.1.9"
   },
   "dependencies": {
-    "axios": "^1.10.0",
+    "axios": "^1.8.4",
+    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "http": "^0.0.1-security",
     "mongoose": "^8.16.0",
     "path-to-regexp": "^6.2.1",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "winston": "^3.17.0"
   }
 }
