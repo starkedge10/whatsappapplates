@@ -9,10 +9,12 @@
     "heroku-postbuild": "cd client && npm install && npm run build"
   },
   "engines": {
-  "node": "20.x"
-},
+    "node": "20.x"
+  },
   "devDependencies": {
     "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
   }
 }
-
