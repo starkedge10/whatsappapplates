@@ -5,7 +5,7 @@
   "scripts": {
     "client": "cd client && npm run dev",
     "server": "cd whatsapp-webhook && npm start",
-    "start": "concurrently \"npm run server\" \"npm run client\"",
+   "start": "node whatsapp-webhook/server.js",
     "heroku-postbuild": "cd client && npm install && npm run build"
   },
   "engines": {
@@ -20,6 +20,7 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "mongoose": "^8.16.0",
+    "path-to-regexp": "^6.2.1",
     "socket.io": "^4.8.1"
   }
 }
