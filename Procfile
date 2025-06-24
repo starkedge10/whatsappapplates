@@ -1,1 +1,1 @@
-web: node whatsapp-webhook/index.js
+web: node whatsapp-webhook/server.js
