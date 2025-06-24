@@ -42,14 +42,14 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use('/', webhookRoutes);
-app.use('/', templateRoutes);
-app.use('/', campaignRoutes);
-app.use('/', contactRoutes);
-app.use('/', replyMaterialRoutes);
-app.use('/', keywordRoutes);
-app.use('/', chatbotsRoutes);
-app.use('/', chatRoutes);
+//app.use('/', webhookRoutes);
+//app.use('/', templateRoutes);
+//app.use('/', campaignRoutes);
+//app.use('/', contactRoutes);
+//app.use('/', replyMaterialRoutes);
+//app.use('/', keywordRoutes);
+//app.use('/', chatbotsRoutes);
+//app.use('/', chatRoutes);
 
 app.set('io', io);
 setupMessageSocket(io);
