@@ -26,7 +26,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: ['http://localhost:5173', 'https://clone-webchat.onrender.com'],
+    origin: ['http://localhost:5173', 'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true
   }
@@ -35,7 +35,7 @@ const io = new SocketIOServer(server, {
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://clone-webchat.onrender.com'],
+  origin: ['http://localhost:5173', 'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
 }));
