@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "node whatsapp-webhook/server.js",
     "client": "cd client && npm run dev",
-    "server": "cd whatsapp-webhook && npm start",
-   "start": "node whatsapp-webhook/server.js",
     "heroku-postbuild": "cd client && npm install && npm run build"
   },
   "engines": {
