@@ -2,7 +2,6 @@
   "name": "web-chat-clone",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "start": "node whatsapp-webhook/server.js",
     "dev": "cd whatsapp-webhook && nodemon server.js",
