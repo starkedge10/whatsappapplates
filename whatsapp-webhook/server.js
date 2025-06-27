@@ -5,6 +5,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 
 import connect from './database/connection.js';
 import webhookRoutes from './routes/webhookRoutes.js';
@@ -66,8 +67,45 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+    dbName: mongoose.connection.db ? mongoose.connection.db.databaseName : 'Unknown'
   });
+});
+
+// Debug endpoint for MongoDB connection
+app.get('/debug/db', async (req, res) => {
+  try {
+    const dbStatus = {
+      readyState: mongoose.connection.readyState,
+      readyStateText: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
+      host: mongoose.connection.host,
+      port: mongoose.connection.port,
+      name: mongoose.connection.name,
+      collections: Object.keys(mongoose.connection.collections)
+    };
+    res.json(dbStatus);
+  } catch (error) {
+    res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
+// Simple test template endpoint
+app.get('/test-templates', async (req, res) => {
+  try {
+    console.log('Test templates endpoint called');
+    console.log('MongoDB state:', mongoose.connection.readyState);
+    
+    // Simple response without database query first
+    res.json({ 
+      message: 'Test templates endpoint working',
+      dbConnected: mongoose.connection.readyState === 1,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Test templates error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // API routes with /api prefix for better organization
@@ -122,7 +160,12 @@ app.use((err, req, res, next) => {
 const start = async () => {
   try {
     console.log('🔗 Connecting to MongoDB...');
-    console.log('Database URI:', process.env.ATLAS_URI ? 'Set' : 'Not set');
+    console.log('Database URI:', process.env.ATLAS_URI ? 'Set (length: ' + process.env.ATLAS_URI.length + ')' : 'Not set');
+    console.log('All environment variables:', Object.keys(process.env).filter(key => key.includes('ATLAS') || key.includes('MONGO')));
+    
+    if (!process.env.ATLAS_URI) {
+      throw new Error('ATLAS_URI environment variable is not set');
+    }
     
     await connect(process.env.ATLAS_URI);
     console.log('✅ MongoDB connected successfully');
@@ -131,10 +174,19 @@ const start = async () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`📂 Serving static files from: ${clientPath}`);
+      console.log('🔗 Available routes:');
+      console.log('  - GET /health');
+      console.log('  - GET /templates');
+      console.log('  - GET /api/templates');
+      console.log('  - GET /keywords');
     });
   } catch (err) {
     console.error('❌ Failed to start server:', err.message);
     console.error('Stack trace:', err.stack);
+    console.error('Environment check:');
+    console.error('  - ATLAS_URI:', process.env.ATLAS_URI ? 'Set' : 'NOT SET');
+    console.error('  - NODE_ENV:', process.env.NODE_ENV || 'not set');
+    console.error('  - PORT:', process.env.PORT || 'not set');
     process.exit(1);
   }
 };
