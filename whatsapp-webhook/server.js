@@ -24,12 +24,17 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
+
+// Fixed CORS configuration - removed trailing slash
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://whatsappchatbox-93c2adc302d2.herokuapp.com'
+];
+
 const io = new SocketIOServer(server, {
   cors: {
-    origin: [
-      'http://localhost:5173',
-      'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'
-    ],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true
   }
@@ -37,18 +42,45 @@ const io = new SocketIOServer(server, {
 
 const PORT = process.env.PORT || 3000;
 
+// CORS middleware
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://whatsappchatbox-93c2adc302d2.herokuapp.com/'
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Heroku, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true
 }));
 
 app.use(express.json());
 
-// Your routes
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API routes with /api prefix for better organization
+app.use('/api', webhookRoutes);
+app.use('/api', templateRoutes);
+app.use('/api', campaignRoutes);
+app.use('/api', contactRoutes);
+app.use('/api', replyMaterialRoutes);
+app.use('/api', keywordRoutes);
+app.use('/api', chatbotsRoutes);
+app.use('/api', chatRoutes);
+
+// Legacy routes (for backward compatibility)
 app.use('/', webhookRoutes);
 app.use('/', templateRoutes);
 app.use('/', campaignRoutes);
@@ -62,22 +94,48 @@ app.use('/', chatRoutes);
 app.set('io', io);
 setupMessageSocket(io);
 
-// 🚀 Always serve React build (for Heroku + local production builds)
-app.use(express.static(path.join(__dirname, '../client/dist')));
+// Serve static files - Fixed path handling for your project structure
+const clientPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, '../client/dist') 
+  : path.join(__dirname, '../client/dist');
 
+console.log('Client path:', clientPath);
+app.use(express.static(clientPath));
+
+// Serve React app for all other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+  const indexPath = path.resolve(__dirname, '../client', 'dist', 'index.html');
+  console.log('Serving index.html from:', indexPath);
+  res.sendFile(indexPath);
 });
 
-// Start server
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  res.status(500).json({ 
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// Start server with better error handling
 const start = async () => {
   try {
+    console.log('🔗 Connecting to MongoDB...');
+    console.log('Database URI:', process.env.ATLAS_URI ? 'Set' : 'Not set');
+    
     await connect(process.env.ATLAS_URI);
+    console.log('✅ MongoDB connected successfully');
+    
     server.listen(PORT, () => {
-      console.log(`✅ Server running on http://localhost:${PORT}`);
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📂 Serving static files from: ${clientPath}`);
     });
   } catch (err) {
     console.error('❌ Failed to start server:', err.message);
+    console.error('Stack trace:', err.stack);
+    process.exit(1);
   }
 };
 
